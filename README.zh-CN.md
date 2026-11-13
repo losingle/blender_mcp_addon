@@ -106,7 +106,7 @@ uv --directory "F:\Mcps\blender_mcp_addon" run --locked blender-mcp-oauth rotate
 
 回调地址以 Gemini 当前应用配置显示的值为准。重新连接原配置通常沿用原地址；删除并重新创建应用可能生成新地址，需要使用 `add-redirect` 登记完整新地址并重启网关。
 
-Gemini 自身的浏览器授权及关联应用状态，需要在 Gemini 界面完成首次连接后确认；当前结果未将通用 OAuth 联调等同于 Gemini 已绑定成功。
+2026-11-13 19:39（Asia/Taipei）已观测到真实 Gemini 的令牌交换与 MCP 请求成功：Google `OpenAuth` 的 `POST /token` 返回 `200`，随后携带 Bearer 令牌的 `initialize`（协议 `2025-11-25`）与 `tools/list` 均返回 `200`。此前同一隧道跨两台电脑运行，停止另一台电脑的副本、仅保留 Windows 后，此链路恢复。若以后恢复另一台电脑上的服务，应使用独立隧道，避免再次将 Windows 本地服务的请求分流到其他主机。
 
 诊断保存在 `.private/diagnostics.jsonl`，文件自动限量轮转。`/token` 和 `/revoke` 分别记录请求到达时的 `received` 与结束时的 `completed`，不记录 Secret、令牌、Cookie、查询串或工具参数。如果 Cloudflare 有请求而本机没有 `received`，先检查隧道副本、路由及边缘处理；如果只有 `received`，再检查请求传输与服务端处理。
 

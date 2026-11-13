@@ -110,6 +110,12 @@ unknown callbacks, bad secrets, incorrect PKCE and reused codes must fail; valid
 must permit an MCP `initialize` and `tools/list`; revocation must immediately block the token.
 Gemini's actual browser callback/login flow requires final interactive verification by the owner.
 
+On 2026-11-13 at 19:39 Asia/Taipei, live Gemini traffic successfully exchanged an authorization
+code (`OpenAuth` `POST /token`: 200), then sent authenticated MCP `initialize` with protocol
+`2025-11-25` and `tools/list` (both 200). This succeeded after stopping a second tunnel replica
+on another host, leaving only the Windows connector. Use separate tunnels when restoring
+services on different hosts.
+
 References: [Google OAuth guide](https://developers.google.com/connected-apps/mcp/oauth),
 [MCP authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
 
