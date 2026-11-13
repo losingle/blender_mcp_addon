@@ -367,6 +367,8 @@ class OAuthTests(unittest.TestCase):
         self.assertEqual(events[0]["status"], 401)
         self.assertEqual(events[-1]["status"], 200)
         self.assertEqual(events[-1]["path"], "/.well-known/oauth-protected-resource")
+        token_events = [event for event in events if event["path"] == "/token"]
+        self.assertEqual([event["event"] for event in token_events], ["received", "completed"])
 
 
 if __name__ == "__main__":

@@ -46,6 +46,13 @@ Remove any public routes that reach 9191 or 9876 directly, because those bypass 
 The gateway and upstream bind loopback. Docker Desktop's host connectivity must work for 9192,
 just as for the prior 9191 mapping. Do not publish the unauthenticated upstream separately.
 
+Use a dedicated tunnel for this Windows host. Reusing the same tunnel token on another machine
+creates a replica: Cloudflare can send any request to either machine. `host.docker.internal` refers
+to each replica's own Docker host, so a Mac replica will not reach the Windows gateway at 9192.
+An authorization page can work while Google's `/token` request goes to a different replica and fails.
+Replicas are appropriate only when every replica can reach the same intended backend. Separate
+machines serving different local applications should use separate tunnels and hostname routes.
+
 During the first authorization, the consent page requests the same Client Secret. There is no
 administrator account or separate password. This is intentionally a **single-owner, fixed-client**
 setup: anyone holding this secret can authorize full Blender control. Do not use it as a multi-user
@@ -107,3 +114,9 @@ References: [Google OAuth guide](https://developers.google.com/connected-apps/mc
 [MCP authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
 
 Protocol diagnostics are stored in .private/diagnostics.jsonl (bounded rotation). They record only known paths, methods, status codes and protocol labels, excluding query strings, credentials and tool arguments.
+
+`/token` and `/revoke` log both `received` and `completed` events. If Cloudflare records a request
+but no `received` event appears here, check tunnel replicas, routing and edge handling before
+changing OAuth validation. A `received` event without `completed` narrows the investigation to
+request transport or server processing. Synthetic OAuth tests do not prove that Gemini has linked
+the account; confirm its actual token exchange and authenticated MCP requests separately.

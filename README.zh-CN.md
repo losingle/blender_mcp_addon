@@ -34,6 +34,12 @@ Gemini
 
 Cloudflare 已切换到 `9192`，整条域名包括 OAuth 和 `.well-known` 路由都经过网关。保持 `9191`、`9876` 只用于本机通信，不另设公网直连路由。
 
+### 多台电脑需要独立隧道
+
+Windows 上的此服务应使用专属 Tunnel。两台电脑使用同一个 Tunnel Token 会成为同一隧道的两个副本，Cloudflare 可将请求分配给任一副本。`host.docker.internal` 指各自 Docker 所在的宿主机；Mac 上的这个地址不会自动连接 Windows 的 `9192`。
+
+因此可能出现浏览器授权正常、Google 的 `/token` 请求却没有到达 Windows 的情况。不同电脑上提供不同本地服务，应建立独立隧道并分别绑定域名。只有所有副本均能访问同一目标后端时，才适合共用隧道做高可用。
+
 ## 重启后的启动顺序
 
 目前 OAuth 网关已在后台运行；本次没有配置开机自启。重新启动电脑后，需要依次启动以下服务。
@@ -69,6 +75,7 @@ uv --directory "F:\Mcps\blender_mcp_addon" run --locked blender-mcp-oauth serve
 | `blender_mcp_oauth/proxy.py` | 验证令牌并转发 MCP HTTP / SSE |
 | `blender_mcp_oauth/app.py` | OAuth 路由、授权确认页、请求保护 |
 | `blender_mcp_oauth/cli.py` | 初始化、启动和凭据管理命令 |
+| `blender_mcp_oauth/diagnostics.py` | 不含凭据和查询串的协议诊断 |
 | `.private/config.json` | 私有配置，包含 Client Secret |
 | `.private/oauth.sqlite3` | 持久化授权状态 |
 | `uv.lock` | 独立锁定依赖版本 |
@@ -100,6 +107,8 @@ uv --directory "F:\Mcps\blender_mcp_addon" run --locked blender-mcp-oauth rotate
 回调地址以 Gemini 当前应用配置显示的值为准。重新连接原配置通常沿用原地址；删除并重新创建应用可能生成新地址，需要使用 `add-redirect` 登记完整新地址并重启网关。
 
 Gemini 自身的浏览器授权及关联应用状态，需要在 Gemini 界面完成首次连接后确认；当前结果未将通用 OAuth 联调等同于 Gemini 已绑定成功。
+
+诊断保存在 `.private/diagnostics.jsonl`，文件自动限量轮转。`/token` 和 `/revoke` 分别记录请求到达时的 `received` 与结束时的 `completed`，不记录 Secret、令牌、Cookie、查询串或工具参数。如果 Cloudflare 有请求而本机没有 `received`，先检查隧道副本、路由及边缘处理；如果只有 `received`，再检查请求传输与服务端处理。
 
 ```powershell
 uv --directory "F:\Mcps\blender_mcp_addon" run --locked python -m unittest discover -s tests -v

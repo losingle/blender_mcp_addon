@@ -41,6 +41,14 @@ class DiagnosticsMiddleware:
                  "accept_json": b"application/json" in accepts,
                  "accept_sse": b"text/event-stream" in accepts,
                  "accept_any": b"*/*" in accepts}
+        event["agent"] = "OpenAuth" if headers.get(b"user-agent", b"") == b"OpenAuth" else "other"
+        if path in {"/token", "/revoke"}:
+            length = headers.get(b"content-length", b"")
+            event["content_length"] = int(length) if length.isdigit() and len(length) < 10 else None
+            event["expect_continue"] = headers.get(b"expect", b"").lower() == b"100-continue"
+            event["chunked"] = b"chunked" in headers.get(b"transfer-encoding", b"").lower()
+            self.handler.handle(logging.LogRecord("oauth.protocol", logging.INFO, __file__, 0,
+                json.dumps(dict(event, event="received")), (), None))
         request_body = bytearray()
         response_body = bytearray()
         status = 500
@@ -68,6 +76,7 @@ class DiagnosticsMiddleware:
         try:
             await self.app(scope, read, write)
         finally:
+            event["event"] = "completed"
             event["status"] = status
             event["duration_ms"] = round((time.monotonic() - started) * 1000)
             if request_body and len(request_body) <= 16384:
